@@ -1,0 +1,59 @@
+namespace NinjaTrader.NinjaScript.Strategies
+{
+	public class NinjaAlgoStrat : Strategy
+	{
+		private CandlestickPattern CandlestickPattern1;
+
+		protected override void OnStateChange()
+		{
+			if (State == State.SetDefaults)
+			{
+				Description									= @"First attempt at a quant algo based on indicators and divergences. ";
+				Name										= "NinjaAlgoStrat";
+				Calculate									= Calculate.OnBarClose;
+				EntriesPerDirection							= 1;
+				EntryHandling								= EntryHandling.AllEntries;
+				IsExitOnSessionCloseStrategy				= true;
+				ExitOnSessionCloseSeconds					= 30;
+				IsFillLimitOnTouch							= false;
+				MaximumBarsLookBack							= MaximumBarsLookBack.TwoHundredFiftySix;
+				OrderFillResolution							= OrderFillResolution.Standard;
+				Slippage									= 0;
+				StartBehavior								= StartBehavior.WaitUntilFlat;
+				TimeInForce									= TimeInForce.Gtc;
+				TraceOrders									= false;
+				RealtimeErrorHandling						= RealtimeErrorHandling.StopCancelClose;
+				StopTargetHandling							= StopTargetHandling.PerEntryExecution;
+				BarsRequiredToTrade							= 20;
+				// Disable this property for performance gains in Strategy Analyzer optimizations
+				// See the Help Guide for additional information
+				IsInstantiatedOnEachOptimizationIteration	= true;
+			}
+			else if (State == State.Configure)
+			{
+				AddDataSeries("MNQ 09-22", Data.BarsPeriodType.Minute, 15, Data.MarketDataType.Last);
+			}
+			else if (State == State.DataLoaded)
+			{				
+				CandlestickPattern1				= CandlestickPattern(Close, ChartPattern.BearishEngulfing, 4);
+				SetStopLoss(CalculationMode.Currency, 20);
+			}
+		}
+
+		protected override void OnBarUpdate()
+		{
+			if (BarsInProgress != 0) 
+				return;
+
+			if (CurrentBars[0] < 1)
+				return;
+
+			 // Set 1
+			if (CrossBelow(Close, CandlestickPattern1, 1))
+			{
+				EnterShort(Convert.ToInt32(Close[0]), "");
+			}
+			
+		}
+	}
+}
